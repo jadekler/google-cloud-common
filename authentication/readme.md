@@ -69,8 +69,19 @@ If you are not running this client on Google Compute Engine, you need a Google D
 
     ![Re-use an existing service account][reuse-service-account]
 
-    The key file you download will be used by this library to authenticate API requests.
+    The key file you download will be used by this library to authenticate API requests and should be stored
+    in a secure location.
 
+  1. Set application default credentials.
+
+    The simplest way for applications to authenticate to a Google Cloud Platform
+    API service is by using ![Application Default Credentials][application-default-credentials] (ADC).
+
+    Services using ADC first search for credentials within a `GOOGLE_APPLICATION_CREDENTIALS` environment variable; Google Cloud recommends you set this environment variable to point to your service account JSON key file.
+
+    ```
+    $ export GOOGLE_APPLICATION_CREDENTIALS=<path_to_service_account_json_file>
+    ```
 
 [gce-how-to]: https://cloud.google.com/compute/docs/authentication#using
 [dev-console]: https://console.developers.google.com/project
@@ -80,3 +91,4 @@ If you are not running this client on Google Compute Engine, you need a Google D
 [create-new-service-account]: https://raw.githubusercontent.com/GoogleCloudPlatform/gcloud-common/master/authentication/create-new-service-account.png
 [create-new-service-account-existing-keys]: https://raw.githubusercontent.com/GoogleCloudPlatform/gcloud-common/master/authentication/create-new-service-account-existing-keys.png
 [reuse-service-account]: https://raw.githubusercontent.com/GoogleCloudPlatform/gcloud-common/master/authentication/reuse-service-account.png
+[application-default-credentials]: https://cloud.google.com/speech/docs/common/auth#adc
