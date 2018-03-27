@@ -1052,6 +1052,29 @@ func genQuery(suite *tpb.TestSuite) {
 				},
 			},
 		},
+
+		{
+			suffix:  "where-null",
+			desc:    "a Where clause comparing to null",
+			comment: "A Where clause that tests for equality with null results in a unary filter.",
+			clauses: []interface{}{
+				&tpb.Where{Path: fp("a"), Op: "==", JsonValue: `null`},
+			},
+			query: &fspb.StructuredQuery{
+				Where: unaryFilter("a", fspb.StructuredQuery_UnaryFilter_IS_NULL),
+			},
+		},
+		{
+			suffix:  "where-NaN",
+			desc:    "a Where clause comparing to NaN",
+			comment: "A Where clause that tests for equality with NaN results in a unary filter.",
+			clauses: []interface{}{
+				&tpb.Where{Path: fp("a"), Op: "==", JsonValue: `"NaN"`},
+			},
+			query: &fspb.StructuredQuery{
+				Where: unaryFilter("a", fspb.StructuredQuery_UnaryFilter_IS_NAN),
+			},
+		},
 		{
 			suffix:  "offset-limit",
 			desc:    "Offset and Limit clauses",
@@ -1479,6 +1502,19 @@ func filter(field string, op fspb.StructuredQuery_FieldFilter_Operator, v interf
 				Field: fref(field),
 				Op:    op,
 				Value: val(v),
+			},
+		},
+	}
+}
+
+func unaryFilter(field string, op fspb.StructuredQuery_UnaryFilter_Operator) *fspb.StructuredQuery_Filter {
+	return &fspb.StructuredQuery_Filter{
+		FilterType: &fspb.StructuredQuery_Filter_UnaryFilter{
+			UnaryFilter: &fspb.StructuredQuery_UnaryFilter{
+				OperandType: &fspb.StructuredQuery_UnaryFilter_Field{
+					Field: fref(field),
+				},
+				Op: op,
 			},
 		},
 	}
