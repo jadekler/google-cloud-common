@@ -1439,6 +1439,24 @@ same collection as the query.`,
 			},
 			isErr: true,
 		},
+		{
+			suffix:  "bad-null",
+			desc:    "where clause with non-== comparison with Null",
+			comment: `You can only compare Null for equality.`,
+			clauses: []interface{}{
+				&tpb.Where{Path: fp("a"), Op: ">", JsonValue: `null`},
+			},
+			isErr: true,
+		},
+		{
+			suffix:  "bad-NaN",
+			desc:    "where clause with non-== comparison with NaN",
+			comment: `You can only compare NaN for equality.`,
+			clauses: []interface{}{
+				&tpb.Where{Path: fp("a"), Op: "<", JsonValue: `"NaN"`},
+			},
+			isErr: true,
+		},
 	} {
 		var tclauses []*tpb.Clause
 		for _, c := range test.clauses {
