@@ -31,9 +31,10 @@ import (
 )
 
 const (
-	database = "projects/projectID/databases/(default)"
-	collPath = database + "/documents/C"
-	docPath  = collPath + "/d"
+	database      = "projects/projectID/databases/(default)"
+	collPath      = database + "/documents/C"
+	docPath       = collPath + "/d"
+	watchTargetID = 1
 )
 
 var outputDir = flag.String("o", "", "directory to write test files")
@@ -345,6 +346,7 @@ func main() {
 	genUpdatePaths(suite)
 	genDelete(suite)
 	genQuery(suite)
+	genListen(suite)
 	if err := writeProtoToFile(filepath.Join(*outputDir, "test-suite.binproto"), suite); err != nil {
 		log.Fatal(err)
 	}
@@ -1477,6 +1479,240 @@ same collection as the query.`,
 		}
 		suite.Tests = append(suite.Tests, tp)
 		outputTestText(fmt.Sprintf("query-%s", test.suffix), test.comment, tp)
+	}
+}
+
+// A listenTest describes a series of Listen RPC responses that result in one or more snapshots.
+type listenTest struct {
+	suffix    string                 // textproto filename suffix
+	desc      string                 // short description
+	comment   string                 // detailed explanation (comment in textproto file)
+	responses []*fspb.ListenResponse // a sequence of responses sent over a Listen stream
+	snapshots []*tpb.Snapshot
+	isErr     bool // arguments result in a client-side error
+}
+
+func genListen(suite *tpb.TestSuite) {
+	current := &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
+		TargetChangeType: fspb.TargetChange_CURRENT,
+	}}}
+
+	noChange := func(readTime *tspb.Timestamp) *fspb.ListenResponse {
+		return &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
+			TargetChangeType: fspb.TargetChange_NO_CHANGE,
+			ReadTime:         readTime,
+		}}}
+	}
+
+	change := func(doc *fspb.Document) *fspb.ListenResponse {
+		return &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_DocumentChange{&fspb.DocumentChange{
+			Document:  doc,
+			TargetIds: []int32{watchTargetID},
+		}}}
+	}
+
+	del := func(path string) *fspb.ListenResponse {
+		return &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_DocumentDelete{&fspb.DocumentDelete{
+			Document: collPath + "/" + path,
+		}}}
+	}
+
+	ts := func(secs int) *tspb.Timestamp {
+		return &tspb.Timestamp{Seconds: int64(secs)}
+	}
+
+	doc := func(path string, aval int, utime *tspb.Timestamp) *fspb.Document {
+		return &fspb.Document{
+			Name:       collPath + "/" + path,
+			Fields:     mp("a", aval),
+			CreateTime: ts(1),
+			UpdateTime: utime,
+		}
+	}
+
+	for _, test := range []listenTest{
+		{
+			suffix:    "empty",
+			desc:      "no changes; empty snapshot",
+			comment:   `There are no changes, so the snapshot should be empty.`,
+			responses: []*fspb.ListenResponse{current, noChange(ts(1))},
+			snapshots: []*tpb.Snapshot{
+				{
+					ReadTime: ts(1),
+				},
+			},
+		},
+		{
+			suffix:    "add-one",
+			desc:      "add a doc",
+			comment:   `Snapshot with a single document.`,
+			responses: []*fspb.ListenResponse{change(doc("d1", 1, ts(1))), current, noChange(ts(2))},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs: []*fspb.Document{doc("d1", 1, ts(1))},
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d1", 1, ts(1)),
+							OldIndex: -1,
+							NewIndex: 0,
+						},
+					},
+					ReadTime: ts(2),
+				},
+			},
+		},
+		{
+			suffix:  "add-mod-del-add",
+			desc:    "add a doc, modify it, delete it, then add it again",
+			comment: `Various changes to a single document.`,
+			responses: []*fspb.ListenResponse{
+				change(doc("d1", 1, ts(1))), current, noChange(ts(1)),
+				change(doc("d1", 2, ts(2))), noChange(ts(2)), // different update time, so new snapshot
+				del("d1"), noChange(ts(3)),
+				change(doc("d1", 3, ts(3))), noChange(ts(4)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs: []*fspb.Document{doc("d1", 1, ts(1))},
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d1", 1, ts(1)),
+							OldIndex: -1,
+							NewIndex: 0,
+						},
+					},
+					ReadTime: ts(1),
+				},
+				{
+					Docs: []*fspb.Document{doc("d1", 2, ts(2))},
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_MODIFIED,
+							Doc:      doc("d1", 2, ts(2)),
+							OldIndex: 0,
+							NewIndex: 0,
+						},
+					},
+					ReadTime: ts(2),
+				},
+				{
+					Docs: nil,
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_REMOVED,
+							Doc:      doc("d1", 2, ts(2)),
+							OldIndex: 0,
+							NewIndex: -1,
+						},
+					},
+					ReadTime: ts(3),
+				},
+				{
+					Docs: []*fspb.Document{doc("d1", 3, ts(3))},
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d1", 3, ts(3)),
+							OldIndex: -1,
+							NewIndex: 0,
+						},
+					},
+					ReadTime: ts(4),
+				},
+			},
+		},
+		{
+			suffix: "nomod",
+			desc:   "add a doc, then change it but without changing its update time",
+			comment: `Document updates are recognized by a change in the update time, not the data.
+This shouldn't actually happen. It is just a test of the update logic.`,
+			responses: []*fspb.ListenResponse{
+				change(doc("d1", 1, ts(1))), current, noChange(ts(1)),
+				change(doc("d1", 2, ts(1))), noChange(ts(2)), // same update time, so no snapshot
+				del("d1"), noChange(ts(3)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs: []*fspb.Document{doc("d1", 1, ts(1))},
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d1", 1, ts(1)),
+							OldIndex: -1,
+							NewIndex: 0,
+						},
+					},
+					ReadTime: ts(1),
+				},
+				{
+					Docs: nil,
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_REMOVED,
+							Doc:      doc("d1", 1, ts(1)),
+							OldIndex: 0,
+							NewIndex: -1,
+						},
+					},
+					ReadTime: ts(3),
+				},
+			},
+		},
+		{
+			suffix: "add-three",
+			desc:   "add three documents",
+			comment: `A snapshot with three documents. The documents are sorted
+first by the "a" field, then by their path. The changes are ordered the same way.`,
+			responses: []*fspb.ListenResponse{
+				change(doc("d1", 3, ts(1))),
+				change(doc("d3", 1, ts(1))),
+				change(doc("d2", 1, ts(1))),
+				current, noChange(ts(2)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs: []*fspb.Document{
+						doc("d2", 1, ts(1)), // same value, so ordered by path
+						doc("d3", 1, ts(1)),
+						doc("d1", 3, ts(1)),
+					},
+					Changes: []*tpb.DocChange{
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d2", 1, ts(1)),
+							OldIndex: -1,
+							NewIndex: 0,
+						},
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d3", 1, ts(1)),
+							OldIndex: -1,
+							NewIndex: 1,
+						},
+						{
+							Kind:     tpb.DocChange_ADDED,
+							Doc:      doc("d1", 3, ts(1)),
+							OldIndex: -1,
+							NewIndex: 2,
+						},
+					},
+					ReadTime: ts(2),
+				},
+			},
+		},
+	} {
+		tp := &tpb.Test{
+			Description: "listen: " + test.desc,
+			Test: &tpb.Test_Listen{&tpb.ListenTest{
+				Responses: test.responses,
+				Snapshots: test.snapshots,
+				IsError:   test.isErr,
+			}},
+		}
+		suite.Tests = append(suite.Tests, tp)
+		outputTestText(fmt.Sprintf("listen-%s", test.suffix), test.comment, tp)
 	}
 }
 
