@@ -1496,6 +1496,9 @@ func genListen(suite *tpb.TestSuite) {
 	current := &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
 		TargetChangeType: fspb.TargetChange_CURRENT,
 	}}}
+	reset := &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
+		TargetChangeType: fspb.TargetChange_RESET,
+	}}}
 
 	noChange := func(readTime *tspb.Timestamp) *fspb.ListenResponse {
 		return &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
@@ -1517,6 +1520,12 @@ func genListen(suite *tpb.TestSuite) {
 		}}}
 	}
 
+	filter := func(count int) *fspb.ListenResponse {
+		return &fspb.ListenResponse{ResponseType: &fspb.ListenResponse_Filter{&fspb.ExistenceFilter{
+			Count: int32(count),
+		}}}
+	}
+
 	ts := func(secs int) *tspb.Timestamp {
 		return &tspb.Timestamp{Seconds: int64(secs)}
 	}
@@ -1528,6 +1537,121 @@ func genListen(suite *tpb.TestSuite) {
 			CreateTime: ts(1),
 			UpdateTime: utime,
 		}
+	}
+
+	added := func(doc *fspb.Document, idx int32) *tpb.DocChange {
+		return &tpb.DocChange{
+			Kind:     tpb.DocChange_ADDED,
+			Doc:      doc,
+			OldIndex: -1,
+			NewIndex: idx,
+		}
+	}
+
+	removed := func(doc *fspb.Document, idx int32) *tpb.DocChange {
+		return &tpb.DocChange{
+			Kind:     tpb.DocChange_REMOVED,
+			Doc:      doc,
+			OldIndex: idx,
+			NewIndex: -1,
+		}
+	}
+
+	modified := func(doc *fspb.Document, oidx, nidx int32) *tpb.DocChange {
+		return &tpb.DocChange{
+			Kind:     tpb.DocChange_MODIFIED,
+			Doc:      doc,
+			OldIndex: oidx,
+			NewIndex: nidx,
+		}
+	}
+
+	doc1 := doc("d1", 3, ts(1))
+	doc1a := doc("d1", -1, ts(3))
+
+	doc2 := doc("d2", 1, ts(1))
+	doc3 := doc("d3", 1, ts(1))
+	doc4 := doc("d4", 2, ts(1))
+	doc4a := doc("d4", -2, ts(3))
+	doc5 := doc("d5", 4, ts(1))
+	doc6 := doc("d6", 3, ts(1))
+	multiDocsTest := listenTest{
+		suffix: "multi-docs",
+		desc:   "multiple documents, added, deleted and updated",
+		comment: `Changes should be ordered with deletes first, then additions, then mods,
+each in query order.
+Old indices refer to the immediately previous state, not the previous snapshot`,
+		responses: []*fspb.ListenResponse{
+			// First, add four docs.
+			change(doc1), change(doc3), change(doc2), change(doc4),
+			current, noChange(ts(2)),
+			// Then: delete two, modify two, add two.
+			change(doc5),
+			del("d3"),
+			change(doc1a),
+			change(doc6),
+			del("d2"),
+			change(doc4a),
+			noChange(ts(4)),
+		},
+		snapshots: []*tpb.Snapshot{
+			{
+				Docs: []*fspb.Document{doc2, doc3, doc4, doc1},
+				Changes: []*tpb.DocChange{
+					added(doc2, 0),
+					added(doc3, 1),
+					added(doc4, 2),
+					added(doc1, 3),
+				},
+				ReadTime: ts(2),
+			},
+			{
+				Docs: []*fspb.Document{doc4a, doc1a, doc6, doc5},
+				Changes: []*tpb.DocChange{
+					removed(doc2, 0),
+					removed(doc3, 0),
+					added(doc6, 2),
+					added(doc5, 3),
+					modified(doc4a, 0, 0),
+					modified(doc1a, 1, 1),
+				},
+				ReadTime: ts(4),
+			},
+		},
+	}
+
+	doc1r := doc("d1", 2, ts(1))
+	doc2r := doc("d2", 1, ts(2))
+	doc2ra := doc("d2", 3, ts(3))
+	resetTest := listenTest{
+		suffix: "reset",
+		desc:   "RESET turns off CURRENT",
+		comment: `A RESET message turns off the CURRENT state, and marks all documents as deleted.
+If a document appeared on the stream but was never part of a snapshot ("d3" in this test), a reset
+will make it disappear completely.`,
+		responses: []*fspb.ListenResponse{
+			change(doc1r),
+			change(doc2r),
+			current, noChange(ts(1)),
+			change(doc("d3", 3, ts(2))),
+			reset,
+			noChange(ts(2)), // no snapshot because no longer current
+			current,
+			change(doc2ra),
+			noChange(ts(3)),
+		},
+		snapshots: []*tpb.Snapshot{
+			{
+				Docs:     []*fspb.Document{doc2r, doc1r},
+				Changes:  []*tpb.DocChange{added(doc2r, 0), added(doc1r, 1)},
+				ReadTime: ts(1),
+			},
+			{
+				Docs:     []*fspb.Document{doc2ra},
+				Changes:  []*tpb.DocChange{removed(doc1r, 1), modified(doc2ra, 0, 0)},
+				ReadTime: ts(3),
+			},
+		},
 	}
 
 	for _, test := range []listenTest{
@@ -1549,15 +1673,8 @@ func genListen(suite *tpb.TestSuite) {
 			responses: []*fspb.ListenResponse{change(doc("d1", 1, ts(1))), current, noChange(ts(2))},
 			snapshots: []*tpb.Snapshot{
 				{
-					Docs: []*fspb.Document{doc("d1", 1, ts(1))},
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d1", 1, ts(1)),
-							OldIndex: -1,
-							NewIndex: 0,
-						},
-					},
+					Docs:     []*fspb.Document{doc("d1", 1, ts(1))},
+					Changes:  []*tpb.DocChange{added(doc("d1", 1, ts(1)), 0)},
 					ReadTime: ts(2),
 				},
 			},
@@ -1574,51 +1691,23 @@ func genListen(suite *tpb.TestSuite) {
 			},
 			snapshots: []*tpb.Snapshot{
 				{
-					Docs: []*fspb.Document{doc("d1", 1, ts(1))},
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d1", 1, ts(1)),
-							OldIndex: -1,
-							NewIndex: 0,
-						},
-					},
+					Docs:     []*fspb.Document{doc("d1", 1, ts(1))},
+					Changes:  []*tpb.DocChange{added(doc("d1", 1, ts(1)), 0)},
 					ReadTime: ts(1),
 				},
 				{
-					Docs: []*fspb.Document{doc("d1", 2, ts(2))},
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_MODIFIED,
-							Doc:      doc("d1", 2, ts(2)),
-							OldIndex: 0,
-							NewIndex: 0,
-						},
-					},
+					Docs:     []*fspb.Document{doc("d1", 2, ts(2))},
+					Changes:  []*tpb.DocChange{modified(doc("d1", 2, ts(2)), 0, 0)},
 					ReadTime: ts(2),
 				},
 				{
-					Docs: nil,
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_REMOVED,
-							Doc:      doc("d1", 2, ts(2)),
-							OldIndex: 0,
-							NewIndex: -1,
-						},
-					},
+					Docs:     nil,
+					Changes:  []*tpb.DocChange{removed(doc("d1", 2, ts(2)), 0)},
 					ReadTime: ts(3),
 				},
 				{
-					Docs: []*fspb.Document{doc("d1", 3, ts(3))},
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d1", 3, ts(3)),
-							OldIndex: -1,
-							NewIndex: 0,
-						},
-					},
+					Docs:     []*fspb.Document{doc("d1", 3, ts(3))},
+					Changes:  []*tpb.DocChange{added(doc("d1", 3, ts(3)), 0)},
 					ReadTime: ts(4),
 				},
 			},
@@ -1635,27 +1724,13 @@ This shouldn't actually happen. It is just a test of the update logic.`,
 			},
 			snapshots: []*tpb.Snapshot{
 				{
-					Docs: []*fspb.Document{doc("d1", 1, ts(1))},
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d1", 1, ts(1)),
-							OldIndex: -1,
-							NewIndex: 0,
-						},
-					},
+					Docs:     []*fspb.Document{doc("d1", 1, ts(1))},
+					Changes:  []*tpb.DocChange{added(doc("d1", 1, ts(1)), 0)},
 					ReadTime: ts(1),
 				},
 				{
-					Docs: nil,
-					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_REMOVED,
-							Doc:      doc("d1", 1, ts(1)),
-							OldIndex: 0,
-							NewIndex: -1,
-						},
-					},
+					Docs:     nil,
+					Changes:  []*tpb.DocChange{removed(doc("d1", 1, ts(1)), 0)},
 					ReadTime: ts(3),
 				},
 			},
@@ -1679,28 +1754,162 @@ first by the "a" field, then by their path. The changes are ordered the same way
 						doc("d1", 3, ts(1)),
 					},
 					Changes: []*tpb.DocChange{
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d2", 1, ts(1)),
-							OldIndex: -1,
-							NewIndex: 0,
-						},
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d3", 1, ts(1)),
-							OldIndex: -1,
-							NewIndex: 1,
-						},
-						{
-							Kind:     tpb.DocChange_ADDED,
-							Doc:      doc("d1", 3, ts(1)),
-							OldIndex: -1,
-							NewIndex: 2,
-						},
+						added(doc("d2", 1, ts(1)), 0),
+						added(doc("d3", 1, ts(1)), 1),
+						added(doc("d1", 3, ts(1)), 2),
 					},
 					ReadTime: ts(2),
 				},
 			},
+		},
+		{
+			suffix:  "nocurrent",
+			desc:    "no snapshot if we don't see CURRENT",
+			comment: `If the watch state is not marked CURRENT, no snapshot is issued.`,
+			responses: []*fspb.ListenResponse{
+				change(doc("d1", 1, ts(1))),
+				noChange(ts(1)),
+				change(doc("d2", 2, ts(2))),
+				current, noChange(ts(2)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs: []*fspb.Document{
+						doc("d1", 1, ts(1)),
+						doc("d2", 2, ts(2)),
+					},
+					Changes: []*tpb.DocChange{
+						added(doc("d1", 1, ts(1)), 0),
+						added(doc("d2", 2, ts(2)), 1),
+					},
+					ReadTime: ts(2),
+				},
+			},
+		},
+		multiDocsTest,
+		resetTest,
+		{
+			suffix:  "doc-remove",
+			desc:    "DocumentRemove behaves like DocumentDelete",
+			comment: `The DocumentRemove response behaves exactly like DocumentDelete.`,
+			responses: []*fspb.ListenResponse{
+				change(doc1), current, noChange(ts(1)),
+				&fspb.ListenResponse{ResponseType: &fspb.ListenResponse_DocumentRemove{&fspb.DocumentRemove{
+					Document: doc1.Name,
+				}}},
+				noChange(ts(2)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs:     []*fspb.Document{doc1},
+					Changes:  []*tpb.DocChange{added(doc1, 0)},
+					ReadTime: ts(1),
+				},
+				{
+					Changes:  []*tpb.DocChange{removed(doc1, 0)},
+					ReadTime: ts(2),
+				},
+			},
+		},
+		{
+			suffix: "filter-nop",
+			desc:   "Filter response with same size is a no-op",
+			comment: `A Filter response whose count matches the size of the current
+state (docs in last snapshot + docs added - docs deleted) is a no-op.`,
+			responses: []*fspb.ListenResponse{
+				change(doc1), change(doc2), current, noChange(ts(1)),
+				change(doc3), del("d1"),
+				filter(2),
+				noChange(ts(2)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs:     []*fspb.Document{doc2, doc1},
+					Changes:  []*tpb.DocChange{added(doc2, 0), added(doc1, 1)},
+					ReadTime: ts(1),
+				},
+				{
+					Docs:     []*fspb.Document{doc2, doc3},
+					Changes:  []*tpb.DocChange{removed(doc1, 1), added(doc3, 1)},
+					ReadTime: ts(2),
+				},
+			},
+		},
+		{
+			suffix: "removed-target-ids",
+			desc:   "DocumentChange with removed_target_id is like a delete.",
+			comment: `A DocumentChange with the watch target ID in the removed_target_ids field is the
+same as deleting a document.`,
+			responses: []*fspb.ListenResponse{
+				change(doc1), current, noChange(ts(1)),
+				&fspb.ListenResponse{ResponseType: &fspb.ListenResponse_DocumentChange{&fspb.DocumentChange{
+					Document:         doc1,
+					RemovedTargetIds: []int32{watchTargetID},
+				}}},
+				noChange(ts(2)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs:     []*fspb.Document{doc1},
+					Changes:  []*tpb.DocChange{added(doc1, 0)},
+					ReadTime: ts(1),
+				},
+				{
+					Docs:     nil,
+					Changes:  []*tpb.DocChange{removed(doc1, 0)},
+					ReadTime: ts(2),
+				},
+			},
+		},
+		{
+			suffix:  "target-add-nop",
+			desc:    "TargetChange_ADD is a no-op if it has the same target ID",
+			comment: `A TargetChange_ADD response must have the same watch target ID.`,
+			responses: []*fspb.ListenResponse{
+				change(doc1), current,
+				&fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
+					TargetChangeType: fspb.TargetChange_ADD,
+					TargetIds:        []int32{watchTargetID},
+					ReadTime:         ts(2),
+				}}},
+				noChange(ts(1)),
+			},
+			snapshots: []*tpb.Snapshot{
+				{
+					Docs:     []*fspb.Document{doc1},
+					Changes:  []*tpb.DocChange{added(doc1, 0)},
+					ReadTime: ts(1),
+				},
+			},
+		},
+		// Errors
+		{
+			suffix:  "target-add-wrong-id",
+			desc:    "TargetChange_ADD is an error if it has a different target ID",
+			comment: `A TargetChange_ADD response must have the same watch target ID.`,
+			responses: []*fspb.ListenResponse{
+				change(doc1), current,
+				&fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
+					TargetChangeType: fspb.TargetChange_ADD,
+					TargetIds:        []int32{watchTargetID + 1},
+					ReadTime:         ts(2),
+				}}},
+				noChange(ts(1)),
+			},
+			isErr: true,
+		},
+		{
+			suffix:  "target-remove",
+			desc:    "TargetChange_REMOVE should not appear",
+			comment: `A TargetChange_REMOVE response should never be sent.`,
+			responses: []*fspb.ListenResponse{
+				change(doc1), current,
+				&fspb.ListenResponse{ResponseType: &fspb.ListenResponse_TargetChange{&fspb.TargetChange{
+					TargetChangeType: fspb.TargetChange_REMOVE,
+				}}},
+				noChange(ts(1)),
+			},
+			isErr: true,
 		},
 	} {
 		tp := &tpb.Test{
