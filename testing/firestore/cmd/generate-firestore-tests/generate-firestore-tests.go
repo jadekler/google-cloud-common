@@ -1084,7 +1084,7 @@ func genQuery(suite *tpb.TestSuite) {
 			clauses: []interface{}{&tpb.Clause_Offset{2}, &tpb.Clause_Limit{3}},
 			query: &fspb.StructuredQuery{
 				Offset: 2,
-				Limit:  &wrappers.Int32Value{3},
+				Limit:  &wrappers.Int32Value{Value: 3},
 			},
 		},
 		{
@@ -1099,7 +1099,7 @@ func genQuery(suite *tpb.TestSuite) {
 			},
 			query: &fspb.StructuredQuery{
 				Offset: 5,
-				Limit:  &wrappers.Int32Value{4},
+				Limit:  &wrappers.Int32Value{Value: 4},
 			},
 		},
 		{
@@ -1623,22 +1623,35 @@ Old indices refer to the immediately previous state, not the previous snapshot`,
 	doc1r := doc("d1", 2, ts(1))
 	doc2r := doc("d2", 1, ts(2))
 	doc2ra := doc("d2", 3, ts(3))
+	doc3r := doc("d3", 3, ts(2))
 	resetTest := listenTest{
 		suffix: "reset",
 		desc:   "RESET turns off CURRENT",
 		comment: `A RESET message turns off the CURRENT state, and marks all documents as deleted.
+
 If a document appeared on the stream but was never part of a snapshot ("d3" in this test), a reset
-will make it disappear completely.`,
+will make it disappear completely.
+
+For a snapshot to happen at a NO_CHANGE reponse, we need to have both seen a CURRENT response, and
+have a change from the previous snapshot. Here, after the reset, we see the same version of d2
+again. That doesn't result in a snapshot.
+`,
 		responses: []*fspb.ListenResponse{
 			change(doc1r),
 			change(doc2r),
 			current, noChange(ts(1)),
-			change(doc("d3", 3, ts(2))),
+			change(doc3r),
 			reset,
 			noChange(ts(2)), // no snapshot because no longer current
 			current,
 			change(doc2ra),
 			noChange(ts(3)),
+			reset,
+			change(doc2ra), // same docs as before, added back
+			current,
+			noChange(ts(4)), // no snapshot, because state is the same as the previous snapshot
+			change(doc3r),
+			noChange(ts(5)), // snapshot, because doc3r is new
 		},
 		snapshots: []*tpb.Snapshot{
 			{
@@ -1650,6 +1663,11 @@ will make it disappear completely.`,
 				Docs:     []*fspb.Document{doc2ra},
 				Changes:  []*tpb.DocChange{removed(doc1r, 1), modified(doc2ra, 0, 0)},
 				ReadTime: ts(3),
+			},
+			{
+				Docs:     []*fspb.Document{doc2ra, doc3r},
+				Changes:  []*tpb.DocChange{added(doc3r, 1)},
+				ReadTime: ts(5),
 			},
 		},
 	}
