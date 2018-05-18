@@ -2,6 +2,7 @@
 
 Get up and running with your Google Cloud Platform client library.
 
+  - C++ - [google-cloud-cpp](https://github.com/googlecloudplatform/google-cloud-cpp)
   - C# - [google-cloud-dotnet](https://github.com/googlecloudplatform/google-cloud-dotnet)
   - Go - [google-cloud-go](https://github.com/googlecloudplatform/google-cloud-go)
   - Java - [google-cloud-java](https://github.com/googlecloudplatform/google-cloud-java)
