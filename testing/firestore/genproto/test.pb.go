@@ -35,6 +35,7 @@ var DocChange_Kind_name = map[int32]string{
 	2: "REMOVED",
 	3: "MODIFIED",
 }
+
 var DocChange_Kind_value = map[string]int32{
 	"KIND_UNSPECIFIED": 0,
 	"ADDED":            1,
@@ -45,8 +46,9 @@ var DocChange_Kind_value = map[string]int32{
 func (x DocChange_Kind) String() string {
 	return proto.EnumName(DocChange_Kind_name, int32(x))
 }
+
 func (DocChange_Kind) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{19, 0}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{19, 0}
 }
 
 // A collection of tests.
@@ -61,7 +63,7 @@ func (m *TestSuite) Reset()         { *m = TestSuite{} }
 func (m *TestSuite) String() string { return proto.CompactTextString(m) }
 func (*TestSuite) ProtoMessage()    {}
 func (*TestSuite) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{0}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{0}
 }
 func (m *TestSuite) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TestSuite.Unmarshal(m, b)
@@ -69,8 +71,8 @@ func (m *TestSuite) XXX_Unmarshal(b []byte) error {
 func (m *TestSuite) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TestSuite.Marshal(b, m, deterministic)
 }
-func (dst *TestSuite) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TestSuite.Merge(dst, src)
+func (m *TestSuite) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TestSuite.Merge(m, src)
 }
 func (m *TestSuite) XXX_Size() int {
 	return xxx_messageInfo_TestSuite.Size(m)
@@ -110,7 +112,7 @@ func (m *Test) Reset()         { *m = Test{} }
 func (m *Test) String() string { return proto.CompactTextString(m) }
 func (*Test) ProtoMessage()    {}
 func (*Test) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{1}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{1}
 }
 func (m *Test) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Test.Unmarshal(m, b)
@@ -118,8 +120,8 @@ func (m *Test) XXX_Unmarshal(b []byte) error {
 func (m *Test) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Test.Marshal(b, m, deterministic)
 }
-func (dst *Test) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Test.Merge(dst, src)
+func (m *Test) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Test.Merge(m, src)
 }
 func (m *Test) XXX_Size() int {
 	return xxx_messageInfo_Test.Size(m)
@@ -130,6 +132,13 @@ func (m *Test) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_Test proto.InternalMessageInfo
 
+func (m *Test) GetDescription() string {
+	if m != nil {
+		return m.Description
+	}
+	return ""
+}
+
 type isTest_Test interface {
 	isTest_Test()
 }
@@ -137,49 +146,56 @@ type isTest_Test interface {
 type Test_Get struct {
 	Get *GetTest `protobuf:"bytes,2,opt,name=get,proto3,oneof"`
 }
+
 type Test_Create struct {
 	Create *CreateTest `protobuf:"bytes,3,opt,name=create,proto3,oneof"`
 }
+
 type Test_Set struct {
 	Set *SetTest `protobuf:"bytes,4,opt,name=set,proto3,oneof"`
 }
+
 type Test_Update struct {
 	Update *UpdateTest `protobuf:"bytes,5,opt,name=update,proto3,oneof"`
 }
+
 type Test_UpdatePaths struct {
 	UpdatePaths *UpdatePathsTest `protobuf:"bytes,6,opt,name=update_paths,json=updatePaths,proto3,oneof"`
 }
+
 type Test_Delete struct {
 	Delete *DeleteTest `protobuf:"bytes,7,opt,name=delete,proto3,oneof"`
 }
+
 type Test_Query struct {
 	Query *QueryTest `protobuf:"bytes,8,opt,name=query,proto3,oneof"`
 }
+
 type Test_Listen struct {
 	Listen *ListenTest `protobuf:"bytes,9,opt,name=listen,proto3,oneof"`
 }
 
-func (*Test_Get) isTest_Test()         {}
-func (*Test_Create) isTest_Test()      {}
-func (*Test_Set) isTest_Test()         {}
-func (*Test_Update) isTest_Test()      {}
+func (*Test_Get) isTest_Test() {}
+
+func (*Test_Create) isTest_Test() {}
+
+func (*Test_Set) isTest_Test() {}
+
+func (*Test_Update) isTest_Test() {}
+
 func (*Test_UpdatePaths) isTest_Test() {}
-func (*Test_Delete) isTest_Test()      {}
-func (*Test_Query) isTest_Test()       {}
-func (*Test_Listen) isTest_Test()      {}
+
+func (*Test_Delete) isTest_Test() {}
+
+func (*Test_Query) isTest_Test() {}
+
+func (*Test_Listen) isTest_Test() {}
 
 func (m *Test) GetTest() isTest_Test {
 	if m != nil {
 		return m.Test
 	}
 	return nil
-}
-
-func (m *Test) GetDescription() string {
-	if m != nil {
-		return m.Description
-	}
-	return ""
 }
 
 func (m *Test) GetGet() *GetTest {
@@ -441,7 +457,7 @@ func (m *GetTest) Reset()         { *m = GetTest{} }
 func (m *GetTest) String() string { return proto.CompactTextString(m) }
 func (*GetTest) ProtoMessage()    {}
 func (*GetTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{2}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{2}
 }
 func (m *GetTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_GetTest.Unmarshal(m, b)
@@ -449,8 +465,8 @@ func (m *GetTest) XXX_Unmarshal(b []byte) error {
 func (m *GetTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_GetTest.Marshal(b, m, deterministic)
 }
-func (dst *GetTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetTest.Merge(dst, src)
+func (m *GetTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetTest.Merge(m, src)
 }
 func (m *GetTest) XXX_Size() int {
 	return xxx_messageInfo_GetTest.Size(m)
@@ -497,7 +513,7 @@ func (m *CreateTest) Reset()         { *m = CreateTest{} }
 func (m *CreateTest) String() string { return proto.CompactTextString(m) }
 func (*CreateTest) ProtoMessage()    {}
 func (*CreateTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{3}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{3}
 }
 func (m *CreateTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CreateTest.Unmarshal(m, b)
@@ -505,8 +521,8 @@ func (m *CreateTest) XXX_Unmarshal(b []byte) error {
 func (m *CreateTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CreateTest.Marshal(b, m, deterministic)
 }
-func (dst *CreateTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_CreateTest.Merge(dst, src)
+func (m *CreateTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateTest.Merge(m, src)
 }
 func (m *CreateTest) XXX_Size() int {
 	return xxx_messageInfo_CreateTest.Size(m)
@@ -561,7 +577,7 @@ func (m *SetTest) Reset()         { *m = SetTest{} }
 func (m *SetTest) String() string { return proto.CompactTextString(m) }
 func (*SetTest) ProtoMessage()    {}
 func (*SetTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{4}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{4}
 }
 func (m *SetTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetTest.Unmarshal(m, b)
@@ -569,8 +585,8 @@ func (m *SetTest) XXX_Unmarshal(b []byte) error {
 func (m *SetTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SetTest.Marshal(b, m, deterministic)
 }
-func (dst *SetTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetTest.Merge(dst, src)
+func (m *SetTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetTest.Merge(m, src)
 }
 func (m *SetTest) XXX_Size() int {
 	return xxx_messageInfo_SetTest.Size(m)
@@ -633,7 +649,7 @@ func (m *UpdateTest) Reset()         { *m = UpdateTest{} }
 func (m *UpdateTest) String() string { return proto.CompactTextString(m) }
 func (*UpdateTest) ProtoMessage()    {}
 func (*UpdateTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{5}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{5}
 }
 func (m *UpdateTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdateTest.Unmarshal(m, b)
@@ -641,8 +657,8 @@ func (m *UpdateTest) XXX_Unmarshal(b []byte) error {
 func (m *UpdateTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdateTest.Marshal(b, m, deterministic)
 }
-func (dst *UpdateTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdateTest.Merge(dst, src)
+func (m *UpdateTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdateTest.Merge(m, src)
 }
 func (m *UpdateTest) XXX_Size() int {
 	return xxx_messageInfo_UpdateTest.Size(m)
@@ -707,7 +723,7 @@ func (m *UpdatePathsTest) Reset()         { *m = UpdatePathsTest{} }
 func (m *UpdatePathsTest) String() string { return proto.CompactTextString(m) }
 func (*UpdatePathsTest) ProtoMessage()    {}
 func (*UpdatePathsTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{6}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{6}
 }
 func (m *UpdatePathsTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UpdatePathsTest.Unmarshal(m, b)
@@ -715,8 +731,8 @@ func (m *UpdatePathsTest) XXX_Unmarshal(b []byte) error {
 func (m *UpdatePathsTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UpdatePathsTest.Marshal(b, m, deterministic)
 }
-func (dst *UpdatePathsTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UpdatePathsTest.Merge(dst, src)
+func (m *UpdatePathsTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_UpdatePathsTest.Merge(m, src)
 }
 func (m *UpdatePathsTest) XXX_Size() int {
 	return xxx_messageInfo_UpdatePathsTest.Size(m)
@@ -784,7 +800,7 @@ func (m *DeleteTest) Reset()         { *m = DeleteTest{} }
 func (m *DeleteTest) String() string { return proto.CompactTextString(m) }
 func (*DeleteTest) ProtoMessage()    {}
 func (*DeleteTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{7}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{7}
 }
 func (m *DeleteTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DeleteTest.Unmarshal(m, b)
@@ -792,8 +808,8 @@ func (m *DeleteTest) XXX_Unmarshal(b []byte) error {
 func (m *DeleteTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DeleteTest.Marshal(b, m, deterministic)
 }
-func (dst *DeleteTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DeleteTest.Merge(dst, src)
+func (m *DeleteTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DeleteTest.Merge(m, src)
 }
 func (m *DeleteTest) XXX_Size() int {
 	return xxx_messageInfo_DeleteTest.Size(m)
@@ -845,7 +861,7 @@ func (m *SetOption) Reset()         { *m = SetOption{} }
 func (m *SetOption) String() string { return proto.CompactTextString(m) }
 func (*SetOption) ProtoMessage()    {}
 func (*SetOption) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{8}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{8}
 }
 func (m *SetOption) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_SetOption.Unmarshal(m, b)
@@ -853,8 +869,8 @@ func (m *SetOption) XXX_Unmarshal(b []byte) error {
 func (m *SetOption) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_SetOption.Marshal(b, m, deterministic)
 }
-func (dst *SetOption) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_SetOption.Merge(dst, src)
+func (m *SetOption) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_SetOption.Merge(m, src)
 }
 func (m *SetOption) XXX_Size() int {
 	return xxx_messageInfo_SetOption.Size(m)
@@ -893,7 +909,7 @@ func (m *QueryTest) Reset()         { *m = QueryTest{} }
 func (m *QueryTest) String() string { return proto.CompactTextString(m) }
 func (*QueryTest) ProtoMessage()    {}
 func (*QueryTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{9}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{9}
 }
 func (m *QueryTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryTest.Unmarshal(m, b)
@@ -901,8 +917,8 @@ func (m *QueryTest) XXX_Unmarshal(b []byte) error {
 func (m *QueryTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryTest.Marshal(b, m, deterministic)
 }
-func (dst *QueryTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryTest.Merge(dst, src)
+func (m *QueryTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryTest.Merge(m, src)
 }
 func (m *QueryTest) XXX_Size() int {
 	return xxx_messageInfo_QueryTest.Size(m)
@@ -962,7 +978,7 @@ func (m *Clause) Reset()         { *m = Clause{} }
 func (m *Clause) String() string { return proto.CompactTextString(m) }
 func (*Clause) ProtoMessage()    {}
 func (*Clause) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{10}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{10}
 }
 func (m *Clause) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Clause.Unmarshal(m, b)
@@ -970,8 +986,8 @@ func (m *Clause) XXX_Unmarshal(b []byte) error {
 func (m *Clause) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Clause.Marshal(b, m, deterministic)
 }
-func (dst *Clause) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Clause.Merge(dst, src)
+func (m *Clause) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Clause.Merge(m, src)
 }
 func (m *Clause) XXX_Size() int {
 	return xxx_messageInfo_Clause.Size(m)
@@ -989,40 +1005,56 @@ type isClause_Clause interface {
 type Clause_Select struct {
 	Select *Select `protobuf:"bytes,1,opt,name=select,proto3,oneof"`
 }
+
 type Clause_Where struct {
 	Where *Where `protobuf:"bytes,2,opt,name=where,proto3,oneof"`
 }
+
 type Clause_OrderBy struct {
 	OrderBy *OrderBy `protobuf:"bytes,3,opt,name=order_by,json=orderBy,proto3,oneof"`
 }
+
 type Clause_Offset struct {
 	Offset int32 `protobuf:"varint,4,opt,name=offset,proto3,oneof"`
 }
+
 type Clause_Limit struct {
 	Limit int32 `protobuf:"varint,5,opt,name=limit,proto3,oneof"`
 }
+
 type Clause_StartAt struct {
 	StartAt *Cursor `protobuf:"bytes,6,opt,name=start_at,json=startAt,proto3,oneof"`
 }
+
 type Clause_StartAfter struct {
 	StartAfter *Cursor `protobuf:"bytes,7,opt,name=start_after,json=startAfter,proto3,oneof"`
 }
+
 type Clause_EndAt struct {
 	EndAt *Cursor `protobuf:"bytes,8,opt,name=end_at,json=endAt,proto3,oneof"`
 }
+
 type Clause_EndBefore struct {
 	EndBefore *Cursor `protobuf:"bytes,9,opt,name=end_before,json=endBefore,proto3,oneof"`
 }
 
-func (*Clause_Select) isClause_Clause()     {}
-func (*Clause_Where) isClause_Clause()      {}
-func (*Clause_OrderBy) isClause_Clause()    {}
-func (*Clause_Offset) isClause_Clause()     {}
-func (*Clause_Limit) isClause_Clause()      {}
-func (*Clause_StartAt) isClause_Clause()    {}
+func (*Clause_Select) isClause_Clause() {}
+
+func (*Clause_Where) isClause_Clause() {}
+
+func (*Clause_OrderBy) isClause_Clause() {}
+
+func (*Clause_Offset) isClause_Clause() {}
+
+func (*Clause_Limit) isClause_Clause() {}
+
+func (*Clause_StartAt) isClause_Clause() {}
+
 func (*Clause_StartAfter) isClause_Clause() {}
-func (*Clause_EndAt) isClause_Clause()      {}
-func (*Clause_EndBefore) isClause_Clause()  {}
+
+func (*Clause_EndAt) isClause_Clause() {}
+
+func (*Clause_EndBefore) isClause_Clause() {}
 
 func (m *Clause) GetClause() isClause_Clause {
 	if m != nil {
@@ -1302,7 +1334,7 @@ func (m *Select) Reset()         { *m = Select{} }
 func (m *Select) String() string { return proto.CompactTextString(m) }
 func (*Select) ProtoMessage()    {}
 func (*Select) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{11}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{11}
 }
 func (m *Select) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Select.Unmarshal(m, b)
@@ -1310,8 +1342,8 @@ func (m *Select) XXX_Unmarshal(b []byte) error {
 func (m *Select) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Select.Marshal(b, m, deterministic)
 }
-func (dst *Select) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Select.Merge(dst, src)
+func (m *Select) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Select.Merge(m, src)
 }
 func (m *Select) XXX_Size() int {
 	return xxx_messageInfo_Select.Size(m)
@@ -1342,7 +1374,7 @@ func (m *Where) Reset()         { *m = Where{} }
 func (m *Where) String() string { return proto.CompactTextString(m) }
 func (*Where) ProtoMessage()    {}
 func (*Where) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{12}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{12}
 }
 func (m *Where) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Where.Unmarshal(m, b)
@@ -1350,8 +1382,8 @@ func (m *Where) XXX_Unmarshal(b []byte) error {
 func (m *Where) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Where.Marshal(b, m, deterministic)
 }
-func (dst *Where) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Where.Merge(dst, src)
+func (m *Where) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Where.Merge(m, src)
 }
 func (m *Where) XXX_Size() int {
 	return xxx_messageInfo_Where.Size(m)
@@ -1395,7 +1427,7 @@ func (m *OrderBy) Reset()         { *m = OrderBy{} }
 func (m *OrderBy) String() string { return proto.CompactTextString(m) }
 func (*OrderBy) ProtoMessage()    {}
 func (*OrderBy) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{13}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{13}
 }
 func (m *OrderBy) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_OrderBy.Unmarshal(m, b)
@@ -1403,8 +1435,8 @@ func (m *OrderBy) XXX_Unmarshal(b []byte) error {
 func (m *OrderBy) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_OrderBy.Marshal(b, m, deterministic)
 }
-func (dst *OrderBy) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OrderBy.Merge(dst, src)
+func (m *OrderBy) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_OrderBy.Merge(m, src)
 }
 func (m *OrderBy) XXX_Size() int {
 	return xxx_messageInfo_OrderBy.Size(m)
@@ -1442,7 +1474,7 @@ func (m *Cursor) Reset()         { *m = Cursor{} }
 func (m *Cursor) String() string { return proto.CompactTextString(m) }
 func (*Cursor) ProtoMessage()    {}
 func (*Cursor) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{14}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{14}
 }
 func (m *Cursor) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Cursor.Unmarshal(m, b)
@@ -1450,8 +1482,8 @@ func (m *Cursor) XXX_Unmarshal(b []byte) error {
 func (m *Cursor) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Cursor.Marshal(b, m, deterministic)
 }
-func (dst *Cursor) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Cursor.Merge(dst, src)
+func (m *Cursor) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Cursor.Merge(m, src)
 }
 func (m *Cursor) XXX_Size() int {
 	return xxx_messageInfo_Cursor.Size(m)
@@ -1488,7 +1520,7 @@ func (m *DocSnapshot) Reset()         { *m = DocSnapshot{} }
 func (m *DocSnapshot) String() string { return proto.CompactTextString(m) }
 func (*DocSnapshot) ProtoMessage()    {}
 func (*DocSnapshot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{15}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{15}
 }
 func (m *DocSnapshot) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DocSnapshot.Unmarshal(m, b)
@@ -1496,8 +1528,8 @@ func (m *DocSnapshot) XXX_Unmarshal(b []byte) error {
 func (m *DocSnapshot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DocSnapshot.Marshal(b, m, deterministic)
 }
-func (dst *DocSnapshot) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DocSnapshot.Merge(dst, src)
+func (m *DocSnapshot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DocSnapshot.Merge(m, src)
 }
 func (m *DocSnapshot) XXX_Size() int {
 	return xxx_messageInfo_DocSnapshot.Size(m)
@@ -1533,7 +1565,7 @@ func (m *FieldPath) Reset()         { *m = FieldPath{} }
 func (m *FieldPath) String() string { return proto.CompactTextString(m) }
 func (*FieldPath) ProtoMessage()    {}
 func (*FieldPath) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{16}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{16}
 }
 func (m *FieldPath) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_FieldPath.Unmarshal(m, b)
@@ -1541,8 +1573,8 @@ func (m *FieldPath) XXX_Unmarshal(b []byte) error {
 func (m *FieldPath) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_FieldPath.Marshal(b, m, deterministic)
 }
-func (dst *FieldPath) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_FieldPath.Merge(dst, src)
+func (m *FieldPath) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_FieldPath.Merge(m, src)
 }
 func (m *FieldPath) XXX_Size() int {
 	return xxx_messageInfo_FieldPath.Size(m)
@@ -1584,7 +1616,7 @@ func (m *ListenTest) Reset()         { *m = ListenTest{} }
 func (m *ListenTest) String() string { return proto.CompactTextString(m) }
 func (*ListenTest) ProtoMessage()    {}
 func (*ListenTest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{17}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{17}
 }
 func (m *ListenTest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ListenTest.Unmarshal(m, b)
@@ -1592,8 +1624,8 @@ func (m *ListenTest) XXX_Unmarshal(b []byte) error {
 func (m *ListenTest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ListenTest.Marshal(b, m, deterministic)
 }
-func (dst *ListenTest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_ListenTest.Merge(dst, src)
+func (m *ListenTest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ListenTest.Merge(m, src)
 }
 func (m *ListenTest) XXX_Size() int {
 	return xxx_messageInfo_ListenTest.Size(m)
@@ -1638,7 +1670,7 @@ func (m *Snapshot) Reset()         { *m = Snapshot{} }
 func (m *Snapshot) String() string { return proto.CompactTextString(m) }
 func (*Snapshot) ProtoMessage()    {}
 func (*Snapshot) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{18}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{18}
 }
 func (m *Snapshot) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Snapshot.Unmarshal(m, b)
@@ -1646,8 +1678,8 @@ func (m *Snapshot) XXX_Unmarshal(b []byte) error {
 func (m *Snapshot) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Snapshot.Marshal(b, m, deterministic)
 }
-func (dst *Snapshot) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Snapshot.Merge(dst, src)
+func (m *Snapshot) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Snapshot.Merge(m, src)
 }
 func (m *Snapshot) XXX_Size() int {
 	return xxx_messageInfo_Snapshot.Size(m)
@@ -1693,7 +1725,7 @@ func (m *DocChange) Reset()         { *m = DocChange{} }
 func (m *DocChange) String() string { return proto.CompactTextString(m) }
 func (*DocChange) ProtoMessage()    {}
 func (*DocChange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_test_338de568ad9314f7, []int{19}
+	return fileDescriptor_c161fcfdc0c3ff1e, []int{19}
 }
 func (m *DocChange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DocChange.Unmarshal(m, b)
@@ -1701,8 +1733,8 @@ func (m *DocChange) XXX_Unmarshal(b []byte) error {
 func (m *DocChange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DocChange.Marshal(b, m, deterministic)
 }
-func (dst *DocChange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DocChange.Merge(dst, src)
+func (m *DocChange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DocChange.Merge(m, src)
 }
 func (m *DocChange) XXX_Size() int {
 	return xxx_messageInfo_DocChange.Size(m)
@@ -1765,9 +1797,9 @@ func init() {
 	proto.RegisterEnum("tests.DocChange_Kind", DocChange_Kind_name, DocChange_Kind_value)
 }
 
-func init() { proto.RegisterFile("test.proto", fileDescriptor_test_338de568ad9314f7) }
+func init() { proto.RegisterFile("test.proto", fileDescriptor_c161fcfdc0c3ff1e) }
 
-var fileDescriptor_test_338de568ad9314f7 = []byte{
+var fileDescriptor_c161fcfdc0c3ff1e = []byte{
 	// 1292 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xc4, 0x57, 0x4d, 0x73, 0xdb, 0xc4,
 	0x1b, 0xaf, 0x6c, 0x4b, 0x96, 0x1e, 0xe7, 0xdf, 0xe6, 0xbf, 0x53, 0x3a, 0x26, 0xc0, 0x34, 0xd5,
