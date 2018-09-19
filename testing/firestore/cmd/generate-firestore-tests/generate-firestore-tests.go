@@ -63,11 +63,11 @@ type writeTest struct {
 	opt              *tpb.SetOption     // option for Set
 	precond          *fspb.Precondition // precondition for Update
 
-	outData       map[string]*fspb.Value // expected data in update write
-	mask          []string               // expected fields in update mask
-	maskForUpdate []string               // mask, but only for Update/UpdatePaths
-	transform     []string               // expected fields in transform
-	isErr         bool                   // arguments result in a client-side error
+	outData       map[string]*fspb.Value                   // expected data in update write
+	mask          []string                                 // expected fields in update mask
+	maskForUpdate []string                                 // mask, but only for Update/UpdatePaths
+	transform     []*fspb.DocumentTransform_FieldTransform // expected transformations
+	isErr         bool                                     // arguments result in a client-side error
 }
 
 var (
@@ -237,11 +237,46 @@ update operation should be produced.`,
 			values:        []string{`"ServerTimestamp"`},
 			outData:       nil,
 			maskForUpdate: nil,
-			transform:     []string{"a"},
+			transform:     transforms(st("a")),
+		},
+		{
+			suffix: "arrayunion-alone",
+			desc:   "ArrayUnion alone",
+			comment: `If the only values in the input are ArrayUnion, then no
+update operation should be produced.`,
+			inData:        `{"a": ["ArrayUnion", 1, 2, 3]}`,
+			paths:         [][]string{{"a"}},
+			values:        []string{`["ArrayUnion", 1, 2, 3]`},
+			outData:       nil,
+			maskForUpdate: nil,
+			transform:     transforms(arrayUnion("a", 1, 2, 3)),
+		},
+		{
+			suffix: "arrayremove-alone",
+			desc:   "ArrayRemove alone",
+			comment: `If the only values in the input are ArrayRemove, then no
+update operation should be produced.`,
+			inData:        `{"a": ["ArrayRemove", 1, 2, 3]}`,
+			paths:         [][]string{{"a"}},
+			values:        []string{`["ArrayRemove", 1, 2, 3]`},
+			outData:       nil,
+			maskForUpdate: nil,
+			transform:     transforms(arrayRemove("a", 1, 2, 3)),
 		},
 	}
 
-	serverTimestampTests = []writeTest{
+	transformTests = []writeTest{
+		{
+			suffix: "all-transforms",
+			desc:   "all transforms in a single call",
+			comment: `A document can be created with any amount of transforms.`,
+			inData:        `{"a": 1, "b": "ServerTimestamp", "c": ["ArrayUnion", 1, 2, 3], "d": ["ArrayRemove", 4, 5, 6]}`,
+			paths:         [][]string{{"a"}, {"b"}, {"c"}, {"d"}},
+			values:        []string{`1`, `"ServerTimestamp"`, `["ArrayUnion", 1, 2, 3]`, `["ArrayRemove", 4, 5, 6]`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a"},
+			transform:     transforms(st("b"), arrayUnion("c", 1, 2, 3), arrayRemove("d", 4, 5, 6)),
+		},
 		{
 			suffix: "st",
 			desc:   "ServerTimestamp with data",
@@ -254,7 +289,31 @@ special ServerTimestamp value.`,
 			values:        []string{`1`, `"ServerTimestamp"`},
 			outData:       mp("a", 1),
 			maskForUpdate: []string{"a"},
-			transform:     []string{"b"},
+			transform:     transforms(st("b")),
+		},
+		{
+			suffix: "arrayunion",
+			desc:   "ArrayUnion with data",
+			comment: `A key with ArrayUnion is removed from the data in the update 
+operation. Instead it appears in a separate Transform operation.`,
+			inData:        `{"a": 1, "b": ["ArrayUnion", 1, 2, 3]}`,
+			paths:         [][]string{{"a"}, {"b"}},
+			values:        []string{`1`, `["ArrayUnion", 1, 2, 3]`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a"},
+			transform:     transforms(arrayUnion("b", 1, 2, 3)),
+		},
+		{
+			suffix: "arrayremove",
+			desc:   "ArrayRemove with data",
+			comment: `A key with ArrayRemove is removed from the data in the update 
+operation. Instead it appears in a separate Transform operation.`,
+			inData:        `{"a": 1, "b": ["ArrayRemove", 1, 2, 3]}`,
+			paths:         [][]string{{"a"}, {"b"}},
+			values:        []string{`1`, `["ArrayRemove", 1, 2, 3]`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a"},
+			transform:     transforms(arrayRemove("b", 1, 2, 3)),
 		},
 		{
 			suffix: "st-nested",
@@ -267,7 +326,33 @@ the transform applies to the field path "b.c". Since "c" is removed from the upd
 			values:        []string{`1`, `{"c": "ServerTimestamp"}`},
 			outData:       mp("a", 1),
 			maskForUpdate: []string{"a", "b"},
-			transform:     []string{"b.c"},
+			transform:     transforms(st("b.c")),
+		},
+		{
+			suffix: "arrayunion-nested",
+			desc:   "nested ArrayUnion field",
+			comment: `An ArrayUnion value can occur at any depth. In this case,
+the transform applies to the field path "b.c". Since "c" is removed from the update,
+"b" becomes empty, so it is also removed from the update.`,
+			inData:        `{"a": 1, "b": {"c": ["ArrayUnion", 1, 2, 3]}}`,
+			paths:         [][]string{{"a"}, {"b"}},
+			values:        []string{`1`, `{"c": ["ArrayUnion", 1, 2, 3]}`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a", "b"},
+			transform:     transforms(arrayUnion("b.c", 1, 2, 3)),
+		},
+		{
+			suffix: "arrayremove-nested",
+			desc:   "nested ArrayRemove field",
+			comment: `An ArrayRemove value can occur at any depth. In this case,
+the transform applies to the field path "b.c". Since "c" is removed from the update,
+"b" becomes empty, so it is also removed from the update.`,
+			inData:        `{"a": 1, "b": {"c": ["ArrayRemove", 1, 2, 3]}}`,
+			paths:         [][]string{{"a"}, {"b"}},
+			values:        []string{`1`, `{"c": ["ArrayRemove", 1, 2, 3]}`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a", "b"},
+			transform:     transforms(arrayRemove("b.c", 1, 2, 3)),
 		},
 		{
 			suffix: "st-multi",
@@ -282,12 +367,62 @@ timestamp, but the update will delete the rest of c.`,
 			values:        []string{`1`, `"ServerTimestamp"`, `{"d": "ServerTimestamp"}`},
 			outData:       mp("a", 1),
 			maskForUpdate: []string{"a", "c"},
-			transform:     []string{"b", "c.d"},
+			transform:     transforms(st("b"), st("c.d")),
+		},
+		{
+			suffix: "arrayunion-multi",
+			desc:   "multiple ArrayUnion fields",
+			comment: `A document can have more than one ArrayUnion field.
+Since all the ArrayUnion fields are removed, the only field in the update is "a".`,
+			commentForUpdate: `b is not in the mask because it will be set in the transform.
+c must be in the mask: it should be replaced entirely. The transform will set c.d to the
+timestamp, but the update will delete the rest of c.`,
+			inData:        `{"a": 1, "b": ["ArrayUnion", 1, 2, 3], "c": {"d": ["ArrayUnion", 4, 5, 6]}}`,
+			paths:         [][]string{{"a"}, {"b"}, {"c"}},
+			values:        []string{`1`, `["ArrayUnion", 1, 2, 3]`, `{"d": ["ArrayUnion", 4, 5, 6]}`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a", "c"},
+			transform:     transforms(arrayUnion("b", 1, 2, 3), arrayUnion("c.d", 4, 5, 6)),
+		},
+		{
+			suffix: "arrayremove-multi",
+			desc:   "multiple ArrayRemove fields",
+			comment: `A document can have more than one ArrayRemove field.
+Since all the ArrayRemove fields are removed, the only field in the update is "a".`,
+			commentForUpdate: `b is not in the mask because it will be set in the transform.
+c must be in the mask: it should be replaced entirely. The transform will set c.d to the
+timestamp, but the update will delete the rest of c.`,
+			inData:        `{"a": 1, "b": ["ArrayRemove", 1, 2, 3], "c": {"d": ["ArrayRemove", 4, 5, 6]}}`,
+			paths:         [][]string{{"a"}, {"b"}, {"c"}},
+			values:        []string{`1`, `["ArrayRemove", 1, 2, 3]`, `{"d": ["ArrayRemove", 4, 5, 6]}`},
+			outData:       mp("a", 1),
+			maskForUpdate: []string{"a", "c"},
+			transform:     transforms(arrayRemove("b", 1, 2, 3), arrayRemove("c.d", 4, 5, 6)),
 		},
 	}
 
-	// Common errors with the ServerTimestamp and Delete sentinels.
-	sentinelErrorTests = []writeTest{
+	// Common errors with the transforms.
+	transformErrorTests = []writeTest{
+		{
+			suffix: "arrayunion-with-st",
+			desc:   "The ServerTimestamp sentinel cannot be in an ArrayUnion",
+			comment: `The ServerTimestamp sentinel must be the value of a field. It may
+not appear in an ArrayUnion.`,
+			inData: `{"a": ["ArrayUnion", 1, "ServerTimestamp", 3]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`["ArrayUnion", 1, "ServerTimestamp", 3]`},
+			isErr:  true,
+		},
+		{
+			suffix: "arrayremove-with-st",
+			desc:   "The ServerTimestamp sentinel cannot be in an ArrayUnion",
+			comment: `The ServerTimestamp sentinel must be the value of a field. It may
+not appear in an ArrayUnion.`,
+			inData: `{"a": ["ArrayRemove", 1, "ServerTimestamp", 3]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`["ArrayRemove", 1, "ServerTimestamp", 3]`},
+			isErr:  true,
+		},
 		{
 			suffix: "st-noarray",
 			desc:   "ServerTimestamp cannot be in an array value",
@@ -296,16 +431,6 @@ transforms don't support array indexing.`,
 			inData: `{"a": [1, 2, "ServerTimestamp"]}`,
 			paths:  [][]string{{"a"}},
 			values: []string{`[1, 2, "ServerTimestamp"]`},
-			isErr:  true,
-		},
-		{
-			suffix: "st-noarray-nested",
-			desc:   "ServerTimestamp cannot be anywhere inside an array value",
-			comment: `There cannot be an array value anywhere on the path from the document
-root to the ServerTimestamp sentinel. Firestore transforms don't support array indexing.`,
-			inData: `{"a": [1, {"b": "ServerTimestamp"}]}`,
-			paths:  [][]string{{"a"}},
-			values: []string{`[1, {"b": "ServerTimestamp"}]`},
 			isErr:  true,
 		},
 		{
@@ -320,6 +445,36 @@ do not support array indexing.`,
 			isErr:  true,
 		},
 		{
+			suffix: "arrayunion-noarray",
+			desc:   "ArrayUnion cannot be in an array value",
+			comment: `ArrayUnion must be the value of a field. Firestore
+transforms don't support array indexing.`,
+			inData: `{"a": [1, 2, ["ArrayRemove", 1, 2, 3]]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`[1, 2, ["ArrayRemove", 1, 2, 3]]`},
+			isErr:  true,
+		},
+		{
+			suffix: "arrayremove-noarray",
+			desc:   "ArrayRemove cannot be in an array value",
+			comment: `ArrayRemove must be the value of a field. Firestore
+transforms don't support array indexing.`,
+			inData: `{"a": [1, 2, ["ArrayRemove", 1, 2, 3]]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`[1, 2, ["ArrayRemove", 1, 2, 3]]`},
+			isErr:  true,
+		},
+		{
+			suffix: "st-noarray-nested",
+			desc:   "ServerTimestamp cannot be anywhere inside an array value",
+			comment: `There cannot be an array value anywhere on the path from the document
+root to the ServerTimestamp sentinel. Firestore transforms don't support array indexing.`,
+			inData: `{"a": [1, {"b": "ServerTimestamp"}]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`[1, {"b": "ServerTimestamp"}]`},
+			isErr:  true,
+		},
+		{
 			suffix: "del-noarray-nested",
 			desc:   "Delete cannot be anywhere inside an array value",
 			comment: `The Delete sentinel must be the value of a field. Deletes are implemented
@@ -328,6 +483,26 @@ array indexing.`,
 			inData: `{"a": [1, {"b": "Delete"}]}`,
 			paths:  [][]string{{"a"}},
 			values: []string{`[1, {"b": "Delete"}]`},
+			isErr:  true,
+		},
+		{
+			suffix: "arrayunion-noarray-nested",
+			desc:   "ArrayUnion cannot be anywhere inside an array value",
+			comment: `There cannot be an array value anywhere on the path from the document
+root to the ArrayUnion. Firestore transforms don't support array indexing.`,
+			inData: `{"a": [1, {"b": ["ArrayUnion", 1, 2, 3]}]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`[1, {"b": ["ArrayUnion", 1, 2, 3]}]`},
+			isErr:  true,
+		},
+		{
+			suffix: "arrayremove-noarray-nested",
+			desc:   "ArrayRemove cannot be anywhere inside an array value",
+			comment: `There cannot be an array value anywhere on the path from the document
+root to the ArrayRemove. Firestore transforms don't support array indexing.`,
+			inData: `{"a": [1, {"b": ["ArrayRemove", 1, 2, 3]}]}`,
+			paths:  [][]string{{"a"}},
+			values: []string{`[1, {"b": ["ArrayRemove", 1, 2, 3]}]`},
 			isErr:  true,
 		},
 	}
@@ -369,8 +544,8 @@ func genCreate(suite *tpb.TestSuite) {
 	var tests []writeTest
 	tests = append(tests, basicTests...)
 	tests = append(tests, createSetTests...)
-	tests = append(tests, serverTimestampTests...)
-	tests = append(tests, sentinelErrorTests...)
+	tests = append(tests, transformTests...)
+	tests = append(tests, transformErrorTests...)
 	tests = append(tests, writeTest{
 		suffix: "st-alone",
 		desc:   "ServerTimestamp alone",
@@ -381,7 +556,7 @@ update operation should be produced.`,
 		values:        []string{`"ServerTimestamp"`},
 		outData:       nil,
 		maskForUpdate: nil,
-		transform:     []string{"a"},
+		transform:     transforms(st("a")),
 	})
 
 	precond := &fspb.Precondition{
@@ -406,12 +581,13 @@ update operation should be produced.`,
 	}
 
 }
+
 func genSet(suite *tpb.TestSuite) {
 	var tests []writeTest
 	tests = append(tests, basicTests...)
 	tests = append(tests, createSetTests...)
-	tests = append(tests, serverTimestampTests...)
-	tests = append(tests, sentinelErrorTests...)
+	tests = append(tests, transformTests...)
+	tests = append(tests, transformErrorTests...)
 	tests = append(tests, []writeTest{
 		{
 			suffix: "st-alone",
@@ -423,7 +599,7 @@ an update operation with an empty map should be produced.`,
 			values:        []string{`"ServerTimestamp"`},
 			outData:       mp(),
 			maskForUpdate: nil,
-			transform:     []string{"a"},
+			transform:     transforms(st("a")),
 		},
 		{
 			suffix:  "mergeall",
@@ -492,7 +668,7 @@ transforms.`,
 			opt:       mergeAllOption,
 			outData:   mp("a", 1),
 			mask:      []string{"a"},
-			transform: []string{"b"},
+			transform: transforms(st("b")),
 		},
 		{
 			suffix: "st-alone-mergeall",
@@ -505,7 +681,7 @@ update operation should be produced.`,
 			values:        []string{`"ServerTimestamp"`},
 			outData:       nil,
 			maskForUpdate: nil,
-			transform:     []string{"a"},
+			transform:     transforms(st("a")),
 		},
 		{
 			suffix: "st-merge-both",
@@ -517,7 +693,7 @@ transforms.`,
 			opt:       mergeOption([]string{"a"}, []string{"b"}),
 			outData:   mp("a", 1),
 			mask:      []string{"a"},
-			transform: []string{"b"},
+			transform: transforms(st("b")),
 		},
 		{
 			suffix: "st-nomerge",
@@ -536,7 +712,7 @@ then it is pruned from the data but does not result in a transform.`,
 values, then no update operation is produced, only a transform.`,
 			inData:    `{"a": 1, "b": "ServerTimestamp"}`,
 			opt:       mergeOption([]string{"b"}),
-			transform: []string{"b"},
+			transform: transforms(st("b")),
 		},
 		{
 			suffix: "st-merge-nonleaf",
@@ -548,7 +724,7 @@ as usual.`,
 			opt:       mergeOption([]string{"h"}),
 			outData:   mp("h", mp("f", 5)),
 			mask:      []string{"h"},
-			transform: []string{"h.g"},
+			transform: transforms(st("h.g")),
 		},
 		{
 			suffix: "st-merge-nonleaf-alone",
@@ -559,7 +735,7 @@ and we clear the value by including the field path in the update mask.`,
 			inData:    `{"h": {"g": "ServerTimestamp"}, "e": 7}`,
 			opt:       mergeOption([]string{"h"}),
 			mask:      []string{"h"},
-			transform: []string{"h.g"},
+			transform: transforms(st("h.g")),
 		},
 		{
 			suffix:  "del-mergeall",
@@ -676,8 +852,8 @@ func genUpdate(suite *tpb.TestSuite) {
 	var tests []writeTest
 	tests = append(tests, basicTests...)
 	tests = append(tests, updateTests...)
-	tests = append(tests, serverTimestampTests...)
-	tests = append(tests, sentinelErrorTests...)
+	tests = append(tests, transformTests...)
+	tests = append(tests, transformErrorTests...)
 	tests = append(tests, []writeTest{
 		{
 			suffix:  "split",
@@ -721,7 +897,7 @@ values are pruned from the output data, but appear in the update mask.`,
 field does not appear in the update mask, because it is in the transform. In this case
 An update operation is produced just to hold the precondition.`,
 			inData:    `{"a.b.c": "ServerTimestamp"}`,
-			transform: []string{"a.b.c"},
+			transform: transforms(st("a.b.c")),
 		},
 		// Errors
 		{
@@ -757,8 +933,8 @@ func genUpdatePaths(suite *tpb.TestSuite) {
 	var tests []writeTest
 	tests = append(tests, basicTests...)
 	tests = append(tests, updateTests...)
-	tests = append(tests, serverTimestampTests...)
-	tests = append(tests, sentinelErrorTests...)
+	tests = append(tests, transformTests...)
+	tests = append(tests, transformErrorTests...)
 	tests = append(tests, []writeTest{
 		{
 			suffix: "fp-multi",
@@ -812,6 +988,14 @@ Each FieldPath is a sequence of uninterpreted path components.`,
 			comment: `The same field cannot occur more than once.`,
 			paths:   [][]string{{"a"}, {"b"}, {"a"}},
 			values:  []string{`1`, `2`, `3`},
+			isErr:   true,
+		},
+		{
+			suffix:  "fp-dup-transforms",
+			desc:    "duplicate field path with only transforms",
+			comment: `The same field cannot occur more than once, even if all the operations are transforms.`,
+			paths:   [][]string{{"a"}, {"b"}, {"a"}},
+			values:  []string{`["ArrayUnion", 1, 2, 3]`, `"ServerTimestamp"`, `["ArrayUnion", 4, 5, 6]`},
 			isErr:   true,
 		},
 	}...)
@@ -908,7 +1092,7 @@ func newUpdateCommitRequest(test writeTest) *fspb.CommitRequest {
 	return newCommitRequest(test.outData, mask, precond, test.transform)
 }
 
-func newCommitRequest(writeFields map[string]*fspb.Value, mask []string, precond *fspb.Precondition, transform []string) *fspb.CommitRequest {
+func newCommitRequest(writeFields map[string]*fspb.Value, mask []string, precond *fspb.Precondition, transforms []*fspb.DocumentTransform_FieldTransform) *fspb.CommitRequest {
 	var writes []*fspb.Write
 	if writeFields != nil || mask != nil {
 		w := &fspb.Write{
@@ -926,21 +1110,12 @@ func newCommitRequest(writeFields map[string]*fspb.Value, mask []string, precond
 		writes = append(writes, w)
 		precond = nil // don't need precond in transform if it is in write
 	}
-	if transform != nil {
-		var fts []*fspb.DocumentTransform_FieldTransform
-		for _, p := range transform {
-			fts = append(fts, &fspb.DocumentTransform_FieldTransform{
-				FieldPath: p,
-				TransformType: &fspb.DocumentTransform_FieldTransform_SetToServerValue{
-					fspb.DocumentTransform_FieldTransform_REQUEST_TIME,
-				},
-			})
-		}
+	if transforms != nil {
 		writes = append(writes, &fspb.Write{
 			Operation: &fspb.Write_Transform{
 				&fspb.DocumentTransform{
 					Document:        docPath,
-					FieldTransforms: fts,
+					FieldTransforms: transforms,
 				},
 			},
 			CurrentDocument: precond,
@@ -1412,6 +1587,24 @@ explicit orderBy clauses as values.`,
 			isErr: true,
 		},
 		{
+			suffix:  "arrayunion-where",
+			desc:    "ArrayUnion in Where",
+			comment: `ArrayUnion is not permitted in queries.`,
+			clauses: []interface{}{
+				&tpb.Where{Path: fp("a"), Op: "==", JsonValue: `["ArrayUnion", 1, 2, 3]`},
+			},
+			isErr: true,
+		},
+		{
+			suffix:  "arrayremove-where",
+			desc:    "ArrayRemove in Where",
+			comment: `ArrayRemove is not permitted in queries.`,
+			clauses: []interface{}{
+				&tpb.Where{Path: fp("a"), Op: "==", JsonValue: `["ArrayRemove", 1, 2, 3]`},
+			},
+			isErr: true,
+		},
+		{
 			suffix:  "st-cursor",
 			desc:    "ServerTimestamp in cursor method",
 			comment: `Sentinel values are not permitted in queries.`,
@@ -1428,6 +1621,26 @@ explicit orderBy clauses as values.`,
 			clauses: []interface{}{
 				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
 				&tpb.Clause_EndBefore{&tpb.Cursor{JsonValues: []string{`"Delete"`}}},
+			},
+			isErr: true,
+		},
+		{
+			suffix:  "arrayunion-cursor",
+			desc:    "ArrayUnion in cursor method",
+			comment: `ArrayUnion is not permitted in queries.`,
+			clauses: []interface{}{
+				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
+				&tpb.Clause_EndBefore{&tpb.Cursor{JsonValues: []string{`["ArrayUnion", 1, 2, 3]`}}},
+			},
+			isErr: true,
+		},
+		{
+			suffix:  "arrayremove-cursor",
+			desc:    "ArrayRemove in cursor method",
+			comment: `ArrayRemove is not permitted in queries.`,
+			clauses: []interface{}{
+				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
+				&tpb.Clause_EndBefore{&tpb.Cursor{JsonValues: []string{`["ArrayRemove", 1, 2, 3]`}}},
 			},
 			isErr: true,
 		},
@@ -2105,4 +2318,43 @@ func fp(s string) *tpb.FieldPath {
 
 func fref(s string) *fspb.StructuredQuery_FieldReference {
 	return &fspb.StructuredQuery_FieldReference{FieldPath: s}
+}
+
+func transforms(t ...*fspb.DocumentTransform_FieldTransform) []*fspb.DocumentTransform_FieldTransform {
+	return t
+}
+
+func st(fieldPath string) *fspb.DocumentTransform_FieldTransform {
+	return &fspb.DocumentTransform_FieldTransform{
+		FieldPath: fieldPath,
+		TransformType: &fspb.DocumentTransform_FieldTransform_SetToServerValue{
+			fspb.DocumentTransform_FieldTransform_REQUEST_TIME,
+		},
+	}
+}
+
+func arrayUnion(fieldPath string, elems ...int) *fspb.DocumentTransform_FieldTransform {
+	var i []*fspb.Value
+	for _, e := range elems {
+		i = append(i, &fspb.Value{ValueType: &fspb.Value_IntegerValue{int64(e)}})
+	}
+	return &fspb.DocumentTransform_FieldTransform{
+		FieldPath: fieldPath,
+		TransformType: &fspb.DocumentTransform_FieldTransform_AppendMissingElements{
+			AppendMissingElements: &fspb.ArrayValue{Values: i},
+		},
+	}
+}
+
+func arrayRemove(fieldPath string, elems ...int) *fspb.DocumentTransform_FieldTransform {
+	var i []*fspb.Value
+	for _, e := range elems {
+		i = append(i, &fspb.Value{ValueType: &fspb.Value_IntegerValue{int64(e)}})
+	}
+	return &fspb.DocumentTransform_FieldTransform{
+		FieldPath: fieldPath,
+		TransformType: &fspb.DocumentTransform_FieldTransform_RemoveAllFromArray{
+			RemoveAllFromArray: &fspb.ArrayValue{Values: i},
+		},
+	}
 }
