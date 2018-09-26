@@ -399,6 +399,18 @@ timestamp, but the update will delete the rest of c.`,
 			maskForUpdate: []string{"a", "c"},
 			transform:     transforms(arrayRemove("b", 1, 2, 3), arrayRemove("c.d", 4, 5, 6)),
 		},
+		{
+			suffix: "st-with-empty-map",
+			desc:   "ServerTimestamp beside an empty map",
+			comment: `When a ServerTimestamp and a map both reside inside a map, the
+ServerTimestamp should be stripped out but the empty map should remain.`,
+			inData:        `{"a": {"b": {}, "c": "ServerTimestamp"}}`,
+			paths:         [][]string{{"a"}},
+			values:        []string{`{"b": {}, "c": "ServerTimestamp"}`},
+			outData:       mp("a", mp("b", mp())), // {"a": {"b": {}}}
+			maskForUpdate: []string{"a"},
+			transform:     transforms(st("a.c")),
+		},
 	}
 
 	// Common errors with the transforms.
@@ -2273,13 +2285,22 @@ func writeProtoToFile(filename string, p proto.Message) (err error) {
 	return err
 }
 
+// mp returns a map. Each odd element is a key, and the next (even) element is its
+// value. If the total number of elements is odd, the last key's value will be nil.
+// If there are no values, an empty map is returned.
 func mp(args ...interface{}) map[string]*fspb.Value {
-	if len(args)%2 != 0 {
-		log.Fatalf("got %d args, want even number", len(args))
-	}
 	m := map[string]*fspb.Value{}
-	for i := 0; i < len(args); i += 2 {
-		m[args[i].(string)] = val(args[i+1])
+
+	var k interface{}
+	for i := 0; i < len(args); i++ {
+		if i%2 == 0 {
+			// key
+			k = args[i]
+			m[k.(string)] = nil
+		} else {
+			// val
+			m[k.(string)] = val(args[i])
+		}
 	}
 	return m
 }
