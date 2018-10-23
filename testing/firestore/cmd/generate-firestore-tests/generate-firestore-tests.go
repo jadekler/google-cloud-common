@@ -267,9 +267,9 @@ update operation should be produced.`,
 
 	transformTests = []writeTest{
 		{
-			suffix: "all-transforms",
-			desc:   "all transforms in a single call",
-			comment: `A document can be created with any amount of transforms.`,
+			suffix:        "all-transforms",
+			desc:          "all transforms in a single call",
+			comment:       `A document can be created with any amount of transforms.`,
 			inData:        `{"a": 1, "b": "ServerTimestamp", "c": ["ArrayUnion", 1, 2, 3], "d": ["ArrayRemove", 4, 5, 6]}`,
 			paths:         [][]string{{"a"}, {"b"}, {"c"}, {"d"}},
 			values:        []string{`1`, `"ServerTimestamp"`, `["ArrayUnion", 1, 2, 3]`, `["ArrayRemove", 4, 5, 6]`},
@@ -1303,6 +1303,56 @@ func genQuery(suite *tpb.TestSuite) {
 					{Field: fref("a"), Direction: fspb.StructuredQuery_DESCENDING},
 				},
 			},
+		},
+		{
+			suffix:  "cursor-startat-empty-map",
+			desc:    "StartAt with explicit empty map",
+			comment: `Cursor methods are allowed to use empty maps with StartAt. It should result in an empty map in the query.`,
+			clauses: []interface{}{
+				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
+				&tpb.Clause_StartAt{&tpb.Cursor{JsonValues: []string{`{}`}}},
+			},
+			query: &fspb.StructuredQuery{
+				OrderBy: []*fspb.StructuredQuery_Order{
+					{Field: fref("a"), Direction: fspb.StructuredQuery_ASCENDING},
+				},
+				StartAt: &fspb.Cursor{Values: []*fspb.Value{val(mp())}, Before: true},
+			},
+		},
+		{
+			suffix:  "cursor-endbefore-empty-map",
+			desc:    "EndBefore with explicit empty map",
+			comment: `Cursor methods are allowed to use empty maps with EndBefore. It should result in an empty map in the query.`,
+			clauses: []interface{}{
+				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
+				&tpb.Clause_EndBefore{&tpb.Cursor{JsonValues: []string{`{}`}}},
+			},
+			query: &fspb.StructuredQuery{
+				OrderBy: []*fspb.StructuredQuery_Order{
+					{Field: fref("a"), Direction: fspb.StructuredQuery_ASCENDING},
+				},
+				EndAt: &fspb.Cursor{Values: []*fspb.Value{val(mp())}, Before: true},
+			},
+		},
+		{
+			suffix:  "cursor-startat-empty",
+			desc:    "StartAt with empty values",
+			comment: `Cursor methods are not allowed to use empty values with StartAt. It should result in an error.`,
+			clauses: []interface{}{
+				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
+				&tpb.Clause_StartAt{&tpb.Cursor{}},
+			},
+			isErr: true,
+		},
+		{
+			suffix:  "cursor-endbefore-empty",
+			desc:    "EndBefore with empty values",
+			comment: `Cursor methods are not allowed to use empty values with EndBefore. It should result in an error.`,
+			clauses: []interface{}{
+				&tpb.OrderBy{Path: fp("a"), Direction: "asc"},
+				&tpb.Clause_EndBefore{&tpb.Cursor{}},
+			},
+			isErr: true,
 		},
 		{
 			suffix:  "cursor-vals-1a",
