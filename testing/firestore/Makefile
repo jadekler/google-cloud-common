@@ -7,16 +7,16 @@
 # - protoc is on the path.
 # - protoc supports proto3 syntax.
 # - The Go protoc plugin has been downloaded and installed.
-# - The github.com/google/protobuf repo has been cloned locally.
-# - The github.com/googleapis/googleapis repo has been cloned locally.
+# - The github.com/google/protobuf repo has been cloned locally (go get github.com/google/protobuf).
+# - The github.com/googleapis/googleapis repo has been cloned locally (go get github.com/googleapis/googleapis).
 
 PROTOC = protoc
 
 PROTOC_GO_PLUGIN_DIR = $(GOPATH)/bin
 
 # Dependent repos.
-PROTOBUF_REPO = $(HOME)/git-repos/protobuf
-GOOGLEAPIS_REPO = $(HOME)/git-repos/googleapis
+PROTOBUF_REPO = $(GOPATH)/src/github.com/golang/protobuf
+GOOGLEAPIS_REPO = $(GOPATH)/src/github.com/googleapis/googleapis
 
 .PHONY: generate-tests sync-protos gen-protos generator
 
