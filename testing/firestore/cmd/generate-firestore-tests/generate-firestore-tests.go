@@ -240,6 +240,17 @@ update operation should be produced.`,
 			transform:     transforms(st("a")),
 		},
 		{
+			suffix: "st-nested-dot",
+			desc:   "update: nested ServerTimestamp field via dotted names",
+			comment: `TODO(tres)`,
+			inData:        `{"a.b": 1, "a.c": "ServerTimestamp"}`,
+			paths:         [][]string{{"a.b", "a.c"}},
+			values:        []string{`[1, "ServerTimestamp"]`},
+			outData:       mp("a", mp("b", 1)),
+			maskForUpdate: nil,
+			transform:     transforms(st("a.c")),
+		},
+		{
 			suffix: "arrayunion-alone",
 			desc:   "ArrayUnion alone",
 			comment: `If the only values in the input are ArrayUnion, then no
