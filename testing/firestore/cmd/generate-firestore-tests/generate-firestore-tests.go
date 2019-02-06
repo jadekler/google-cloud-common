@@ -23,11 +23,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	tpb "github.com/GoogleCloudPlatform/google-cloud-common/testing/firestore/genproto"
+	tpb "github.com/googleapis/google-cloud-common/testing/firestore/genproto"
 	"github.com/golang/protobuf/proto"
 	tspb "github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/golang/protobuf/ptypes/wrappers"
-	fspb "google.golang.org/genproto/googleapis/firestore/v1beta1"
+	fspb "google.golang.org/genproto/googleapis/firestore/v1"
 )
 
 const (
