@@ -240,6 +240,30 @@ update operation should be produced.`,
 			transform:     transforms(st("a")),
 		},
 		{
+			suffix: "nested-single-value",
+			desc: 	`Updating a nested value results in update masks that are tightly 
+scoped to that specific field.`,
+			comment:   `Changing a.b sends an update that's scoped specifically to
+a.b, instead of sending an update that changes the entirety of a. For example,
+"its field_key should be a.b: 7, not a: b: 7 (which would entirely replace all of
+"a and blow away anything other than a.b).`,
+
+			// inData => json_data (non-paths) => ???
+			inData:        `{"a.b": 7}`,
+
+			// paths => field_paths (paths) => []firestore.Update.Path
+			paths:         [][]string{{"a", "b"}},
+			// inData => json_values => []firestore.Update.Val
+			values:        []string{`7`},
+
+			// outData => request.writes => request expectation
+			outData:       mp("a", mp("b", 7)),
+			// maskForUpdate => request.update_mask => request expectation
+			maskForUpdate: []string{"a.b"},
+			// unnecessary?
+			transform:     nil,
+		},
+		{
 			suffix: "arrayunion-alone",
 			desc:   "ArrayUnion alone",
 			comment: `If the only values in the input are ArrayUnion, then no
