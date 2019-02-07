@@ -3,7 +3,7 @@
 
 # TODO(tres)
 
-description: "update: update: nested ServerTimestamp field via dotted names"
+description: "update: nested ServerTimestamp field via dotted names"
 update: <
   doc_ref_path: "projects/projectID/databases/(default)/documents/C/d"
   json_data: "{\"a.b\": 1, \"a.c\": \"ServerTimestamp\"}"

@@ -241,7 +241,7 @@ update operation should be produced.`,
 		},
 		{
 			suffix: "st-nested-dot",
-			desc:   "update: nested ServerTimestamp field via dotted names",
+			desc:   "nested ServerTimestamp field via dotted names",
 			comment: `TODO(tres)`,
 			inData:        `{"a.b": 1, "a.c": "ServerTimestamp"}`,
 			paths:         [][]string{{"a.b", "a.c"}},
