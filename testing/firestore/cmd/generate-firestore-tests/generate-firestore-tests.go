@@ -264,6 +264,27 @@ a.b, instead of sending an update that changes the entirety of a. For example,
 			transform:     nil,
 		},
 		{
+			suffix: "nested-single-value-with-transform",
+			desc: 	`TODO.`,
+			comment:   `TODO.`,
+
+			// inData => json_data (non-paths) => ???
+			inData:        `{"a.b": "ServerTimestamp"}`,
+
+			// paths => field_paths (paths) => []firestore.Update.Path
+			paths:         [][]string{{"a", "b"}},
+			// inData => json_values => []firestore.Update.Val
+			values:        []string{`"ServerTimestamp"`},
+
+			// outData => request.writes => request expectation
+			outData:       nil,
+			// maskForUpdate => request.update_mask => request expectation
+			maskForUpdate: nil,
+
+			// unnecessary?
+			transform:     transforms(st("a.b")),
+		},
+		{
 			suffix: "arrayunion-alone",
 			desc:   "ArrayUnion alone",
 			comment: `If the only values in the input are ArrayUnion, then no
