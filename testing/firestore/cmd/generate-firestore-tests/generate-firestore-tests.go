@@ -51,23 +51,70 @@ var (
 	nTests int
 )
 
-// A writeTest describes a Create, Set, Update or UpdatePaths call.
+// A writeTest describes a Create, Set, or Update call.
+//
+// Note that Update calls can be specified with either json-like input or
+// fieldpath pairs. Some languages (such as Go) only allow the latter, whilst
+// others allow both.
 type writeTest struct {
-	suffix           string             // textproto filename suffix
-	desc             string             // short description
-	comment          string             // detailed explanation (comment in textproto file)
-	commentForUpdate string             // additional comment for update operations.
-	inData           string             // input data, as JSON
-	paths            [][]string         // fields paths for UpdatePaths
-	values           []string           // values for UpdatePaths, as JSON
-	opt              *tpb.SetOption     // option for Set
-	precond          *fspb.Precondition // precondition for Update
+	// Textproto filename suffix.
+	suffix           string
+	// Short description.
+	desc             string
+	// Detailed explanation (comment in textproto file).
+	comment          string
+	// Additional comment for update operations.
+	commentForUpdate string
 
-	outData       map[string]*fspb.Value                   // expected data in update write
-	mask          []string                                 // expected fields in update mask
-	maskForUpdate []string                                 // mask, but only for Update/UpdatePaths
-	transform     []*fspb.DocumentTransform_FieldTransform // expected transformations
-	isErr         bool                                     // arguments result in a client-side error
+	// Input data. This is a json-like object in dynamic languages or a map
+	// in compiled languages (Java).
+	//
+	// This is equivalent to the paths+values fields below, except that the
+	// data is specified as a single object instead of as arrays of paths and
+	// values. Some languages - such as Go - do not support this input type.
+	//
+	// This value is parsed into fieldpath/value pairs and turned into the
+	// proto values firestore.Update.Path and firestore.Update.Val.
+	inData           string
+
+	// Paths and values are used as fieldpath inputs to Update as opposed to
+	// the json-like inputs to Update specified in "inData".
+
+	// paths is an array of paths.
+	//
+	// The inner array is a single path which is specified as an array of
+	// strings. So, "a", "b", "c" refers to object c in object b in object a.
+	// The outer array is the list of paths and corresponds with the value of
+	// the same index in values.
+	//
+	// This value corresponds to the proto value firestore.Update.Path
+	paths            [][]string
+	// values is an array of values whose index corresponds to the path of the
+	// same index in the outer array of paths.
+	//
+	// This value corresponds to the proto value firestore.Update.Val.
+	values           []string
+
+	// Option for Set.
+	opt              *tpb.SetOption
+
+	// Precondition for Update.
+	precond          *fspb.Precondition
+
+	// Expected data in the update write.
+	outData       map[string]*fspb.Value
+
+	// Expected fields in update mask.
+	mask          []string
+
+	// Mask, but only for Update/UpdatePaths.
+	maskForUpdate []string
+
+	// Expected transformations.
+	transform     []*fspb.DocumentTransform_FieldTransform
+
+	// Arguments result in a client-side error.
+	isErr         bool
 }
 
 var (
