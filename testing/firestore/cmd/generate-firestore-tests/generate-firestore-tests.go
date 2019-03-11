@@ -240,49 +240,24 @@ update operation should be produced.`,
 			transform:     transforms(st("a")),
 		},
 		{
-			suffix: "nested-single-value",
-			desc: 	`Updating a nested value results in update masks that are tightly 
-scoped to that specific field.`,
-			comment:   `Changing a.b sends an update that's scoped specifically to
-a.b, instead of sending an update that changes the entirety of a. For example,
-"its field_key should be a.b: 7, not a: b: 7 (which would entirely replace all of
-"a and blow away anything other than a.b).`,
+			suffix: "todo",
+			desc: 	`TODO.`,
+			comment:   `TODO.`,
 
 			// inData => json_data (non-paths) => ???
-			inData:        `{"a.b": 7}`,
+			inData:        `{"a.b": 7, "a.c": "ServerTimestamp"}`,
 
 			// paths => field_paths (paths) => []firestore.Update.Path
-			paths:         [][]string{{"a", "b"}},
+			paths:         [][]string{{"a", "b"}, {"a", "c"}},
 			// inData => json_values => []firestore.Update.Val
-			values:        []string{`7`},
+			values:        []string{"7", `"ServerTimestamp"`},
 
 			// outData => request.writes => request expectation
 			outData:       mp("a", mp("b", 7)),
 			// maskForUpdate => request.update_mask => request expectation
 			maskForUpdate: []string{"a.b"},
-			// unnecessary?
-			transform:     nil,
-		},
-		{
-			suffix: "nested-single-value-with-transform",
-			desc: 	`TODO.`,
-			comment:   `TODO.`,
 
-			// inData => json_data (non-paths) => ???
-			inData:        `{"a.b": "ServerTimestamp"}`,
-
-			// paths => field_paths (paths) => []firestore.Update.Path
-			paths:         [][]string{{"a", "b"}},
-			// inData => json_values => []firestore.Update.Val
-			values:        []string{`"ServerTimestamp"`},
-
-			// outData => request.writes => request expectation
-			outData:       nil,
-			// maskForUpdate => request.update_mask => request expectation
-			maskForUpdate: nil,
-
-			// unnecessary?
-			transform:     transforms(st("a.b")),
+			transform:     transforms(st("a.c")),
 		},
 		{
 			suffix: "arrayunion-alone",
