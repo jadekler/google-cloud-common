@@ -287,6 +287,32 @@ update operation should be produced.`,
 			transform:     transforms(st("a")),
 		},
 		{
+			suffix: "nested-transform-and-nested-value",
+			desc: 	`Nested transforms should not affect the field mask, even
+when there are other values that do. Transforms should only affect the
+DocumentTransform_FieldTransform list.`,
+			comment:   `For updates, top-level paths in json-like map inputs
+are split on the dot. That is, an input {"a.b.c": 7} results in an update to
+field c of object b of object a with value 7. In order to specify this behavior,
+the update must use a fieldmask "a.b.c". However, fieldmasks are only used for
+concrete values - transforms are separately encoded in a
+DocumentTransform_FieldTransform array.
+
+This test exercises a bug found in python (https://github.com/googleapis/google-cloud-python/issues/7215)
+in which nested transforms ({"a.c": "ServerTimestamp"}) next to nested values
+({"a.b": 7}) incorrectly caused the fieldmask "a" to be set, which has the
+effect of wiping out all data in "a" other than what was specified in the
+json-like input.
+
+Instead, as this test specifies, transforms should not affect the fieldmask.`,
+			inData:        `{"a.b": 7, "a.c": "ServerTimestamp"}`,
+			paths:         [][]string{{"a", "b"}, {"a", "c"}},
+			values:        []string{"7", `"ServerTimestamp"`},
+			outData:       mp("a", mp("b", 7)),
+			maskForUpdate: []string{"a.b"},
+			transform:     transforms(st("a.c")),
+		},
+		{
 			suffix: "arrayunion-alone",
 			desc:   "ArrayUnion alone",
 			comment: `If the only values in the input are ArrayUnion, then no

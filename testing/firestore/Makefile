@@ -15,7 +15,7 @@ PROTOC = protoc
 PROTOC_GO_PLUGIN_DIR = $(GOPATH)/bin
 
 # Dependent repos.
-PROTOBUF_REPO = $(GOPATH)/src/github.com/golang/protobuf
+PROTOBUF_REPO = $(GOPATH)/src/github.com/google/protobuf
 GOOGLEAPIS_REPO = $(GOPATH)/src/github.com/googleapis/googleapis
 
 .PHONY: generate-tests sync-protos gen-protos generator
