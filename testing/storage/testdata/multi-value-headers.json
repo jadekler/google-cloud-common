@@ -1,0 +1,24 @@
+{
+	"fileName": "multi-value-headers",
+	"description": "Multi-value headers",
+	"bucket": "test-bucket",
+	"object": "test-object",
+	"method": "GET",
+	"expiration": "10",
+	"timestamp": "20190201T090000Z",
+	"expectedUrl": "https://storage.googleapis.com/test-bucket/test-object?X-Goog-Algorithm=GOOG4-RSA-SHA256\u0026X-Goog-Credential=test-iam-credentials%40dummy-project-id.iam.gserviceaccount.com%2F20190201%2Fauto%2Fstorage%2Fgoog4_request\u0026X-Goog-Date=20190201T090000Z\u0026X-Goog-Expires=10\u0026X-Goog-SignedHeaders=bar%3Bfoo%3Bhost\u0026X-Goog-Signature=84a14ff388457290bc3ed7bfeb4745a1c2287e58965457d9d9959326fc2cbdfbb9128b6a002e86d617cb1d2187e3e075de223489d4e91418de76e21d4e561c618bc13ac72e1cc3b4e0c9eee880be577c417eb4623347d3d1ffd2a0705ab70bab6786f67107d05dc4652f2b84531dc01a15efa9ee3fbe504f6e76e64658fd1df431bf671a997db8ef7371eae8abbcc2690c085407738e32f396d9b87d0e974740ee0b7a256fc8471db27a6b554527b96dbd972073b89f57d6486182816b0d307875f1753bf16140332c6116899447769dd9f1985a520ca6ab50c614a80b3619e9d9a81ff81a6c14f51f1cf487243c2708aa9064e30acb5694af04c3fe0f5fd5a4",
+	"headers": {
+		"bar": {
+			"headers": [
+				"bar-value1",
+				"bar-value2"
+			]
+		},
+		"foo": {
+			"headers": [
+				"foo-value1",
+				"foo-value2"
+			]
+		}
+	}
+}

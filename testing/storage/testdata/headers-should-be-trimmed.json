@@ -1,0 +1,27 @@
+{
+	"fileName": "headers-should-be-trimmed",
+	"description": "Headers should be trimmed",
+	"bucket": "test-bucket",
+	"object": "test-object",
+	"method": "GET",
+	"expiration": "10",
+	"timestamp": "20190201T090000Z",
+	"expectedUrl": "https://storage.googleapis.com/test-bucket/test-object?X-Goog-Algorithm=GOOG4-RSA-SHA256\u0026X-Goog-Credential=test-iam-credentials%40dummy-project-id.iam.gserviceaccount.com%2F20190201%2Fauto%2Fstorage%2Fgoog4_request\u0026X-Goog-Date=20190201T090000Z\u0026X-Goog-Expires=10\u0026X-Goog-SignedHeaders=collapsed%3Bhost%3Bleading%3Btrailing\u0026X-Goog-Signature=1839511d6238d9ac2bbcbba8b23515b3757db35dfa7b8f9bc4b8b4aa270224df747c812526f1a3bcf294d67ed84cd14e074c36bc090e0a542782934a7c925af4a5ea68123e97533704ce8b08ccdf5fe6b412f89c9fc4de243e29abdb098382c5672188ee3f6fef7131413e252c78e7a35658825ad842a50609e9cc463731e17284ff7a14824c989f87cef22fb99dfec20cfeed69d8b3a08f00b43b8284eecd535e50e982b05cd74c5750cd5f986cfc21a2a05f7f3ab7fc31bd684ed1b823b64d29281e923fc6580c49005552ca19c253de087d9d2df881144e44eda40965cfdb4889bf3a35553c9809f4ed20b8355be481b92b9618952b6a04f3017b36053e15",
+	"headers": {
+		"collapsed": {
+			"headers": [
+				"abc    def"
+			]
+		},
+		"leading": {
+			"headers": [
+				"    xyz"
+			]
+		},
+		"trailing": {
+			"headers": [
+				"abc    "
+			]
+		}
+	}
+}
