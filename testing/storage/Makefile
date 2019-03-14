@@ -1,6 +1,5 @@
 # This makefile builds the cross-language tests for Storage.
-# It outputs each test as a separate .json file into the
-# testdata directory of this repo.
+# It outputs all tests into a testcases.json file.
 
 # Prerequisites:
 # - This repo is under GOPATH.
@@ -19,7 +18,7 @@ PROTOBUF_REPO = $(GOPATH)/src/github.com/google/protobuf
 .PHONY: generate-tests gen-protos
 
 generate-tests: gen-protos
-	rm testdata/*.textproto | true
+	rm testcases.json | true
 	go run main.go
 
 gen-protos:
